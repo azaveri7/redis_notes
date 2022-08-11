@@ -78,9 +78,9 @@ redis-cli -p 7001 -c
 
 — Get set commands
 
-set bo:pipeline:flag 0
+set se:pipeline:flag 0
 
-get bo:pipeline:flag
+get se:pipeline:flag
 
 “0”
 
@@ -89,21 +89,21 @@ get bo:pipeline:flag
 keys *
 
 127.0.0.1:7002> keys *
- 1) "bo:tkn:manifest:zwbq5e48nd3vtpb"
- 2) "bo:tkn:manifest:b5cg7e8d38j3nzh"
+ 1) "se:tkn:manifest:zwbq5e48nd3vtpb"
+ 2) "se:tkn:manifest:b5cg7e8d38j3nzh"
  3) "foo"
- 4) "bo:tkn:manifest:4qynr347swdrdqz"
- 5) "bo:app:st57nvamxd7j82e"
- 6) "bo:app:4y4mse6psdbaqkt"
- 7) "bo:tkn:manifest:b4kp37f9f5peed9"
- 8) "bo:tkn:manifest:asnnka2ef43zp9x"
- 9) "bo:app:57nrywhcydqhs2k"
-10) "bo:app:bbvfku9pas259tr"
-11) "bo:pipeline:flag”
+ 4) "se:tkn:manifest:4qynr347swdrdqz"
+ 5) "se:app:st57nvamxd7j82e"
+ 6) "se:app:4y4mse6psdbaqkt"
+ 7) "se:tkn:manifest:b4kp37f9f5peed9"
+ 8) "se:tkn:manifest:asnnka2ef43zp9x"
+ 9) "se:app:57nrywhcydqhs2k"
+10) "se:app:bbvfku9pas259tr"
+11) "se:pipeline:flag”
 
 — To delete a key
 
-127.0.0.1:7002> del bo:pipeline:flag
+127.0.0.1:7002> del se:pipeline:flag
 (integer) 1
 
 — To increment value of counter/sequence
@@ -136,22 +136,22 @@ mset and get
 
 — to set keys with expiration time, use EX for seconds, PX for milliseconds
 
-127.0.0.1:7002> set bo:pipeline:color red EX 60
+127.0.0.1:7002> set se:pipeline:color red EX 60
 OK
-127.0.0.1:7002> get bo:pipeline:color
+127.0.0.1:7002> get se:pipeline:color
 "red"
-127.0.0.1:7002> get bo:pipeline:color
+127.0.0.1:7002> get se:pipeline:color
 (nil)
 
 — to expire an existing key, use expire command
 
-127.0.0.1:7002> expire bo:pipeline:color 30
+127.0.0.1:7002> expire se:pipeline:color 30
 (integer) 1
-127.0.0.1:7002> get bo:pipeline:color
+127.0.0.1:7002> get se:pipeline:color
 (nil)
 
 — to unexpired a key, use persist command
- persist bo:pipeline:color
+ persist se:pipeline:color
 
 — to remove all keys, use flush all
 
