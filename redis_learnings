@@ -1,0 +1,419 @@
+Redis notes:
+
+Redis -> Remote Discovery Server
+
+— To check all Redis services
+
+ps -ef | grep redis
+
+(All 6 nodes will be listed here)
+
+— To check status of all nodes in redis cluster
+
+➜  ~ redis-cli --cluster check 127.0.0.1:7001
+127.0.0.1:7001 (38b82cec...) -> 11 keys | 8192 slots | 1 slaves.
+127.0.0.1:7003 (f416efcc...) -> 0 keys | 1 slots | 1 slaves.
+127.0.0.1:7002 (7ef7e563...) -> 0 keys | 8191 slots | 1 slaves.
+[OK] 11 keys in 3 masters.
+0.00 keys per slot on average.
+>>> Performing Cluster Check (using node 127.0.0.1:7001)
+M: 38b82cec4041034e250f13d6ca5f3ba09dd18feb 127.0.0.1:7001
+   slots:[0-8191] (8192 slots) master
+   1 additional replica(s)
+S: 0c78aa82cab8ac5acbd86c3f85b43ecac14ddebf 127.0.0.1:7011
+   slots: (0 slots) slave
+   replicates 38b82cec4041034e250f13d6ca5f3ba09dd18feb
+S: fa0a94bafccc831feeab7791ac165cf20ed19be7 127.0.0.1:7013
+   slots: (0 slots) slave
+   replicates f416efccf4a841fdb66b92ad0150c372133ae05b
+S: 2854c3d6008e95b013fc28f887ee41029b9e2bf8 127.0.0.1:7012
+   slots: (0 slots) slave
+   replicates 7ef7e56387680d54179f7b89e9fa4a40f133b140
+M: f416efccf4a841fdb66b92ad0150c372133ae05b 127.0.0.1:7003
+   slots:[16383] (1 slots) master
+   1 additional replica(s)
+M: 7ef7e56387680d54179f7b89e9fa4a40f133b140 127.0.0.1:7002
+   slots:[8192-16382] (8191 slots) master
+   1 additional replica(s)
+[OK] All nodes agree about slots configuration.
+>>> Check for open slots...
+>>> Check slots coverage...
+[OK] All 16384 slots covered.
+
+— Lets shutdown a master, so that its slave will become master. 7003 master shutdown and 7013 slave becomes master
+
+redis-cli -p 7002 shutdown
+
+➜  ~ redis-cli -p 7003 shutdown
+➜  ~ redis-cli --cluster check 127.0.0.1:7001
+Could not connect to Redis at 127.0.0.1:7003: Connection refused
+127.0.0.1:7001 (38b82cec...) -> 11 keys | 8192 slots | 1 slaves.
+127.0.0.1:7013 (fa0a94ba...) -> 0 keys | 1 slots | 0 slaves.
+127.0.0.1:7002 (7ef7e563...) -> 0 keys | 8191 slots | 1 slaves.
+[OK] 11 keys in 3 masters.
+0.00 keys per slot on average.
+>>> Performing Cluster Check (using node 127.0.0.1:7001)
+M: 38b82cec4041034e250f13d6ca5f3ba09dd18feb 127.0.0.1:7001
+   slots:[0-8191] (8192 slots) master
+   1 additional replica(s)
+S: 0c78aa82cab8ac5acbd86c3f85b43ecac14ddebf 127.0.0.1:7011
+   slots: (0 slots) slave
+   replicates 38b82cec4041034e250f13d6ca5f3ba09dd18feb
+M: fa0a94bafccc831feeab7791ac165cf20ed19be7 127.0.0.1:7013
+   slots:[16383] (1 slots) master
+S: 2854c3d6008e95b013fc28f887ee41029b9e2bf8 127.0.0.1:7012
+   slots: (0 slots) slave
+   replicates 7ef7e56387680d54179f7b89e9fa4a40f133b140
+M: 7ef7e56387680d54179f7b89e9fa4a40f133b140 127.0.0.1:7002
+   slots:[8192-16382] (8191 slots) master
+   1 additional replica(s)
+[OK] All nodes agree about slots configuration.
+>>> Check for open slots...
+>>> Check slots coverage...
+[OK] All 16384 slots covered.
+
+— To start Redis Cli
+
+redis-cli -p 7001 -c
+
+— Get set commands
+
+set bo:pipeline:flag 0
+
+get bo:pipeline:flag
+
+“0”
+
+— To see all the keys
+
+keys *
+
+127.0.0.1:7002> keys *
+ 1) "bo:tkn:manifest:zwbq5e48nd3vtpb"
+ 2) "bo:tkn:manifest:b5cg7e8d38j3nzh"
+ 3) "foo"
+ 4) "bo:tkn:manifest:4qynr347swdrdqz"
+ 5) "bo:app:st57nvamxd7j82e"
+ 6) "bo:app:4y4mse6psdbaqkt"
+ 7) "bo:tkn:manifest:b4kp37f9f5peed9"
+ 8) "bo:tkn:manifest:asnnka2ef43zp9x"
+ 9) "bo:app:57nrywhcydqhs2k"
+10) "bo:app:bbvfku9pas259tr"
+11) "bo:pipeline:flag”
+
+— To delete a key
+
+127.0.0.1:7002> del bo:pipeline:flag
+(integer) 1
+
+— To increment value of counter/sequence
+
+127.0.0.1:7002> set seq_id 1
+OK
+127.0.0.1:7002> get seq_id
+"1"
+127.0.0.1:7002> incr seq_id
+(integer) 2
+127.0.0.1:7002> incr seq_id
+(integer) 3
+127.0.0.1:7002> get seq_id
+“3"
+
+— To get total num of keys in Redis
+
+dbsize
+
+127.0.0.1:7002> dbsize
+(integer) 11
+127.0.0.1:7002>
+
+— to get and set multiple keys in single command, use
+
+mset and get
+
+— to check if a key exists, use command exists.
+  The command returns 0 if the key does not exists.
+
+— to set keys with expiration time, use EX for seconds, PX for milliseconds
+
+127.0.0.1:7002> set bo:pipeline:color red EX 60
+OK
+127.0.0.1:7002> get bo:pipeline:color
+"red"
+127.0.0.1:7002> get bo:pipeline:color
+(nil)
+
+— to expire an existing key, use expire command
+
+127.0.0.1:7002> expire bo:pipeline:color 30
+(integer) 1
+127.0.0.1:7002> get bo:pipeline:color
+(nil)
+
+— to unexpired a key, use persist command
+ persist bo:pipeline:color
+
+— to remove all keys, use flush all
+
+127.0.0.1:7002> flushall
+OK
+127.0.0.1:7002> keys *
+(empty array)
+127.0.0.1:7002>
+
+— to store a list type of key
+
+127.0.0.1:7002> lpush color red blue gray
+-> Redirected to slot [4601] located at 127.0.0.1:7001
+(integer) 3
+127.0.0.1:7001> lrange color 0 -1
+1) "gray"
+2) "blue"
+3) “red"
+
+127.0.0.1:7001> lrange color 0 1
+1) "gray"
+2) "blue"
+
+— lpush and rpush commands
+
+127.0.0.1:7001> lpush color black
+(integer) 4
+127.0.0.1:7001> lrange color 0 -1
+1) "black"
+2) "gray"
+3) "blue"
+4) "red"
+127.0.0.1:7001> rpush color white
+(integer) 5
+127.0.0.1:7001> lrange color 0 -1
+1) "black"
+2) "gray"
+3) "blue"
+4) "red"
+5) “white"
+
+— to find length of list key
+
+127.0.0.1:7001> llen color
+(integer) 5
+
+— lpop and rpop commands to remove keys from list
+
+— hset and hget used for key-value pair
+
+hset product chair 100 table 200 tv 300
+
+hget product table
+200
+
+hget product tv
+300
+
+hmget product chair table tv
+“100”
+“200”
+“300”
+
+=============
+Sets in Redis
+=============
+
+sadd users_ip 10.0.0.1 10.0.0.2
+
+scard users_ip
+2
+
+smembers users_ip
+“10.0.0.1”
+“10.0.0.2”
+
+sismember, diff
+
+================
+Commands history
+================
+
+Exit from Redis-cli command prompt
+
+cd ~
+pwd
+/home/anandzaveri
+
+ls -lrta
+
+Check for a file .rediscli_history
+
+tail -100 .rediscli_history
+
+==================
+Redis Transactions
+==================
+
+a transaction starts with command multi
+
+multi
+
+get ticket_available
+“QUEUED”
+
+decr ticket_available
+“QUEUED”
+
+get ticket_available
+“QUEUED”
+
+exec
+
+Now all 3 commands are executed, first they were queued.
+
+If any command fails in between, the transaction fails and
+nothing is executed.
+
+Instead of exec, if we use command discard, it will discard
+all the commands in the transaction.
+
+==============
+Mass insertion
+==============
+
+use redis-cli —pipe => it sends data very fast to Redis server.
+
+=============
+Mass insertion into Redis and access using python script
+=============
+cat /tmp/student.csv.redis_format | redis-cli -p 7001 —pipe
+
+You can use pip to install redis
+
+load_student_info.py
+
+-------
+import sys
+import redis
+
+r = redis.Strict(‘localhost’,6370,decode_responses=True)
+
+header = [‘firstname’,’lastname’,’fullname’,’address’]
+
+def get_values(key):
+	key = str(key)
+        try:
+            value = r.get(key)
+        except:
+            sys.exit(“error”)
+        return value
+
+print(get_values(sys.argv[1]))
+
+
+————
+
+To run this file run command
+
+python load_student_info.py 3
+
+
+
+=============
+Redis cluster
+=============
+
+
+To setup Redis cluster, we need at least 6 servers i.e. 3 masters and 3 slaves
+lets say M1, M2, M3 are the masters and their slaves are S1, S2 and S3.
+If a master goes down, its slave will take over. If M1 goes down, S1 will take over
+If slave goes down, nothing happens.
+redis-py-cluster.py can be used to store keys into redis in a clustered mode.
+Data is partitioned into 16K partitions, so they are divided between 3 nodes in above case.
+At max, we can have 1000 nodes.
+Hash values of keys are determined to decided in which partition, key will reside.
+
+=================
+Redis persistence
+=================
+3 options
+RDB (performs point in time snapshot of data at the specified interval)
+AOF (keeps log for every write operation performed by Redis)
+Hybrid (RDB + AOF)
+
+=> RDB
+
+   save 60 1000
+
+   it tells Redis to save data either every 60 seconds or 1000 keys are updated.
+
+   Advantages:
+compact, single file of redis data.
+perfect for backups
+performance is good
+faster restarts
+
+	Disadvantages:
+chances of data loss
+fork process, may impact write operations for few milliseconds
+
+
+=> AOF (append only file)
+
+   define fsync policies, always, every sec
+
+Advantages:
+High durability
+allows different fsync policies
+append only logs, no chances of corruption
+corrupted file can be fixed by Redis-check-aof tool
+AOF file can be parsed, lines can be removed.
+
+	Disadvantages:
+size is bigger than RDB
+slower than RDB
+
+
+=========================
+Enable snpashotting - RDB
+=========================
+
+in redis.conf,
+
+dbfilename dump.rdb
+
+by default, snapshots are created in a file called dump.rdb
+
+lets change it to
+
+dbfilename dump_redis.rdb
+
+The file location is stored at
+dir ./
+
+you can change it to
+
+dir /home/redisadmin/redis_backup
+
+The same location where redis folder is there
+
+Default commands to save snapshot is
+
+save 900 1     -> to perform a snapshot every 900 seconds if one key is changed/created.
+save 300 10   -> to perform a snapshot every 300 seconds if 10 keys are changed/created.
+save 60 10000 -> to perform a snapshot every 60 seconds if 10000 keys are changed/created.
+
+All these conditions are checked while creating a snapshot.
+
+Next time when you start the redis server, it will check for dump_redis.rdb snapshot, and it will
+restore everything from there.
+
+=========================
+Enable snpashotting - AOF
+=========================
+
+in redis.conf,
+
+Comment all save lines like
+save 900 1
+
+dir /home/redisadmin/redis_backup
+appendonly yes
+appendfsync everysec
+appendfilename “redis_backup.aof”
